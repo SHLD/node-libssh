@@ -104,6 +104,7 @@ void Message::Init () {
   NODE_SET_PROTOTYPE_METHOD(tpl, "replyAuthSuccess", ReplyAuthSuccess);
   NODE_SET_PROTOTYPE_METHOD(tpl, "replySuccess", ReplySuccess);
   NODE_SET_PROTOTYPE_METHOD(tpl, "comparePublicKey", ComparePublicKey);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "getPublicKey", GetPublicKey);
   NODE_SET_PROTOTYPE_METHOD(tpl, "scpAccept", ScpAccept);
   NODE_SET_PROTOTYPE_METHOD(tpl, "sftpAccept", SftpAccept);
 }
@@ -219,6 +220,20 @@ NAN_METHOD(Message::ReplyAuthSuccess) {
   ssh_message_auth_reply_success(m->message, 0);
 
   NanReturnUndefined();
+}
+
+NAN_METHOD(Message::GetPublicKey) {
+  NanScope();
+
+  Message* m = node::ObjectWrap::Unwrap<Message>(args.This());
+  ssh_key key = ssh_message_auth_pubkey(m->message);
+  char *b;
+  int rc = ssh_pki_export_pubkey_base64(key, &b);
+  if (rc) {
+    return NanThrowError("Error: could not export key");
+  }
+
+  NanReturnValue(v8::String::New(b, strlen(b)));
 }
 
 NAN_METHOD(Message::ComparePublicKey) {
